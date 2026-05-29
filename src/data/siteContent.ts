@@ -137,6 +137,16 @@ export const differentiators = [
 
 export const portfolioProjects: ProjectItem[] = [
   {
+    name: "911 Lost Dog",
+    category: "Web Application",
+    goal: "A full-stack web application built to help reunite lost dogs with their owners, with user accounts, lost-dog posting, and direct messaging between finders and owners across a community-driven search network.",
+    tags: ["Web Application", "Messaging", "Full-Stack"],
+    accent: "linear-gradient(135deg, rgba(180,30,30,0.92), rgba(247,170,80,0.55))",
+    image: "https://s.wordpress.com/mshots/v1/https%3A%2F%2F911lostdog.com?w=1600",
+    url: "https://911lostdog.com",
+    summary: "A fully functional web application where owners can post lost dogs and finders can message them directly. Built on a real PostgreSQL database with a modern TypeScript stack, deployed for live community use — not a static brochure site."
+  },
+  {
     name: "MHC MGA",
     category: "Managing General Agency",
     goal: "A sharper digital presence for a managing general agency focused on transportation, built to communicate trust, underwriting clarity, and a more current brand presentation.",
