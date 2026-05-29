@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Route, Routes, useLocation } from "react-router-dom";
 import Lenis from "lenis";
 import { Layout } from "./components/layout/Layout";
@@ -8,17 +8,23 @@ import { PortfolioPage } from "./pages/PortfolioPage";
 import { AboutPage } from "./pages/AboutPage";
 import { QuotePage } from "./pages/QuotePage";
 
-function ScrollToTop() {
+function ScrollToTop({ lenisRef }: { lenisRef: React.MutableRefObject<Lenis | null> }) {
   const location = useLocation();
 
   useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [location.pathname]);
+    if (lenisRef.current) {
+      lenisRef.current.scrollTo(0, { immediate: true });
+    } else {
+      window.scrollTo(0, 0);
+    }
+  }, [location.pathname, lenisRef]);
 
   return null;
 }
 
 export default function App() {
+  const lenisRef = useRef<Lenis | null>(null);
+
   useEffect(() => {
     const reduceMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
     const finePointerQuery = window.matchMedia("(pointer: fine)");
@@ -37,6 +43,7 @@ export default function App() {
       smoothWheel: true,
       gestureOrientation: "vertical"
     });
+    lenisRef.current = lenis;
 
     let frame = 0;
     const raf = (time: number) => {
@@ -48,12 +55,13 @@ export default function App() {
     return () => {
       cancelAnimationFrame(frame);
       lenis.destroy();
+      lenisRef.current = null;
     };
   }, []);
 
   return (
     <>
-      <ScrollToTop />
+      <ScrollToTop lenisRef={lenisRef} />
       <Routes>
         <Route path="/" element={<Layout><HomePage /></Layout>} />
         <Route path="/services" element={<Layout><ServicesPage /></Layout>} />

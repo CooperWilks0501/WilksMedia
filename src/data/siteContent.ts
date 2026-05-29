@@ -190,7 +190,7 @@ export const portfolioProjects: ProjectItem[] = [
 
 export const contactPlaceholders = {
   email: "cooper@wilksmedia.com",
-  instagram: "@wilksmedia",
+  instagram: "@wilks_media_",
   note: "Replace placeholder contact details with the final business information before launch."
 };
 

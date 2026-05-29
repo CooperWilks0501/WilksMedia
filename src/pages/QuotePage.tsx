@@ -217,7 +217,7 @@ export function QuotePage() {
               <p>Reach out directly anytime &mdash; usually the fastest way to get a conversation started.</p>
               <div className="contact-list">
                 <a href={`mailto:${contactPlaceholders.email}`}>{contactPlaceholders.email}</a>
-                <a href="https://instagram.com" target="_blank" rel="noreferrer">
+                <a href="https://instagram.com/wilks_media_" target="_blank" rel="noreferrer">
                   {contactPlaceholders.instagram}
                 </a>
               </div>
