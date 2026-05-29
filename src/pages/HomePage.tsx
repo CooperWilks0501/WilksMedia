@@ -12,8 +12,13 @@ import {
   serviceHighlights
 } from "../data/siteContent";
 import { staggerContainer, fadeUp } from "../lib/motion";
+import { useDocumentMeta } from "../lib/useDocumentMeta";
 
 export function HomePage() {
+  useDocumentMeta(
+    "WilksMedia — Premium Small-Business Websites in Columbia, SC",
+    "WilksMedia builds premium custom websites for small businesses in Columbia, SC. Solo studio by Cooper Wilks, 2026 USC IT graduate. Direct communication, no agency layers."
+  );
   return (
     <>
       <HomeHero />

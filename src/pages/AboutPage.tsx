@@ -1,8 +1,13 @@
 import { Button } from "../components/common/Button";
 import { Reveal } from "../components/common/Reveal";
 import { PageHero } from "../components/sections/PageHero";
+import { useDocumentMeta } from "../lib/useDocumentMeta";
 
 export function AboutPage() {
+  useDocumentMeta(
+    "About Cooper Wilks — Founder of WilksMedia",
+    "Cooper Wilks is a 2026 University of South Carolina IT graduate and the solo founder of WilksMedia, a Columbia, SC web design studio for small businesses."
+  );
   return (
     <>
       <PageHero

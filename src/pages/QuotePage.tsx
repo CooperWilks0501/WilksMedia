@@ -1,12 +1,17 @@
 import { useState, type FormEvent } from "react";
 import { PageHero } from "../components/sections/PageHero";
 import { contactPlaceholders } from "../data/siteContent";
+import { useDocumentMeta } from "../lib/useDocumentMeta";
 
 const WORKER_URL = "https://wilksmedia-contact.cooper-adf.workers.dev";
 
 type SubmitStatus = "idle" | "sending" | "success" | "error";
 
 export function QuotePage() {
+  useDocumentMeta(
+    "Get a Quote — Start Your Project with WilksMedia",
+    "Tell WilksMedia about your project. Quick form, response within 1–2 business days. Custom small-business websites starting at $500."
+  );
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [company, setCompany] = useState("");

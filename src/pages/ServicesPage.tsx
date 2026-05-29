@@ -3,8 +3,13 @@ import { Reveal } from "../components/common/Reveal";
 import { PageHero } from "../components/sections/PageHero";
 import { Button } from "../components/common/Button";
 import { extendedServices, serviceHighlights } from "../data/siteContent";
+import { useDocumentMeta } from "../lib/useDocumentMeta";
 
 export function ServicesPage() {
+  useDocumentMeta(
+    "Services — Custom Websites + Ongoing Upkeep | WilksMedia",
+    "WilksMedia services: custom website design and development, plus simple ongoing monthly upkeep. Built and supported by one person from quote to launch."
+  );
   return (
     <>
       <PageHero

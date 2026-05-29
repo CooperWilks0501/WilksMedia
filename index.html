@@ -2,15 +2,85 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0"
-    />
-    <title>WilksMedia</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>WilksMedia &mdash; Premium Small-Business Websites in Columbia, SC</title>
     <meta
       name="description"
-      content="WilksMedia builds premium websites that look sharper, communicate clearly, and stay maintained long after launch."
+      content="WilksMedia is a Columbia, SC web design studio building premium custom websites for small businesses. Founded by Cooper Wilks, 2026 University of South Carolina IT graduate. Solo studio. Direct communication. Built to last."
     />
+    <link rel="canonical" href="https://wilksmedia.com/" />
+    <meta name="theme-color" content="#1a1b1f" />
+    <link rel="icon" type="image/png" href="/WilksMediaLogo.png" />
+
+    <!-- Open Graph (used by Facebook, LinkedIn, iMessage, Slack previews) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="WilksMedia" />
+    <meta
+      property="og:description"
+      content="Premium small-business websites by Cooper Wilks. A solo studio in Columbia, SC building sites that look sharper, communicate clearly, and stay maintained."
+    />
+    <meta property="og:url" content="https://wilksmedia.com/" />
+    <meta property="og:image" content="https://wilksmedia.com/WilksMediaLogo.png" />
+    <meta property="og:site_name" content="WilksMedia" />
+
+    <!-- Twitter card -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="WilksMedia" />
+    <meta
+      name="twitter:description"
+      content="Premium small-business websites by Cooper Wilks. Columbia, SC."
+    />
+    <meta name="twitter:image" content="https://wilksmedia.com/WilksMediaLogo.png" />
+
+    <!-- Structured data: tells Google this is a business -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "ProfessionalService",
+        "name": "WilksMedia",
+        "alternateName": "Wilks Media",
+        "url": "https://wilksmedia.com/",
+        "logo": "https://wilksmedia.com/WilksMediaLogo.png",
+        "image": "https://wilksmedia.com/WilksMediaLogo.png",
+        "description": "Premium small-business website design, development, and ongoing upkeep. Solo studio founded by Cooper Wilks.",
+        "founder": {
+          "@type": "Person",
+          "name": "Cooper Wilks",
+          "alumniOf": "University of South Carolina"
+        },
+        "areaServed": {
+          "@type": "City",
+          "name": "Columbia, SC"
+        },
+        "email": "cooper@wilksmedia.com",
+        "sameAs": [
+          "https://instagram.com/wilks_media_",
+          "https://github.com/CooperWilks0501"
+        ]
+      }
+    </script>
+
+    <!-- GitHub Pages SPA fallback decoder: paired with public/404.html. -->
+    <script>
+      (function (l) {
+        if (l.search[1] === "/") {
+          var decoded = l.search
+            .slice(1)
+            .split("&")
+            .map(function (s) {
+              return s.replace(/~and~/g, "&");
+            })
+            .join("?");
+          window.history.replaceState(
+            null,
+            "",
+            l.pathname.slice(0, -1) + decoded + l.hash
+          );
+        }
+      })(window.location);
+    </script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link

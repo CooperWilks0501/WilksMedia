@@ -3,8 +3,13 @@ import { Button } from "../components/common/Button";
 import { Reveal } from "../components/common/Reveal";
 import { PageHero } from "../components/sections/PageHero";
 import { portfolioProjects } from "../data/siteContent";
+import { useDocumentMeta } from "../lib/useDocumentMeta";
 
 export function PortfolioPage() {
+  useDocumentMeta(
+    "Portfolio — WilksMedia Web Design Projects",
+    "Live client work from WilksMedia: small-business websites and web applications including 911 Lost Dog, MHC MGA, Commodore Trucking, Jack Finn Craftsman, and Palmetto Consulting."
+  );
   return (
     <>
       <PageHero
