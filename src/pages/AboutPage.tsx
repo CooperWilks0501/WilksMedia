@@ -23,7 +23,7 @@ export function AboutPage() {
         <div className="container split-panel">
           <Reveal className="panel about-photo">
             <img
-              src="/cooper.jpg"
+              src="/cooper.jpeg"
               alt="Cooper Wilks at his University of South Carolina graduation, May 2026"
               loading="lazy"
             />
