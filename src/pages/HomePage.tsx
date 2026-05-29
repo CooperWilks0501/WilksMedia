@@ -24,7 +24,7 @@ export function HomePage() {
             <span className="eyebrow">What We Do</span>
             <h2>A digital presence should feel premium before a word is read.</h2>
             <p>
-              Bandit Media exists to give businesses a web presence that feels premium, performs with purpose, and evolves with them. We design and build custom websites that look exceptional, communicate clearly, and stay supported through simple ongoing upkeep.
+              WilksMedia exists to give businesses a web presence that feels premium, performs with purpose, and evolves with them. We design and build custom websites that look exceptional, communicate clearly, and stay supported through simple ongoing upkeep.
             </p>
           </Reveal>
           <Reveal className="intro-aside">
@@ -45,7 +45,7 @@ export function HomePage() {
           <SectionHeading
             eyebrow="Services Snapshot"
             title="Built to launch cleanly. Structured to stay maintained."
-            description="Bandit Media handles both the website build and the long-term upkeep, so the experience stays consistent after launch."
+            description="WilksMedia handles both the website build and the long-term upkeep, so the experience stays consistent after launch."
           />
           <motion.div
             className="service-grid"
@@ -74,7 +74,7 @@ export function HomePage() {
       <section className="section">
         <div className="container why-grid">
           <SectionHeading
-            eyebrow="Why Bandit Media"
+            eyebrow="Why WilksMedia"
             title="Custom work, modern execution, simple support."
             description="The goal is not just a better-looking site. The goal is a site that feels credible, current, and easy to keep sharp."
           />
@@ -148,7 +148,7 @@ export function HomePage() {
           </Reveal>
           <Reveal className="pricing-teaser__aside">
             <p>
-              You do not need one team to build the site and another team to keep it current. Bandit Media handles both.
+              You do not need one team to build the site and another team to keep it current. WilksMedia handles both.
             </p>
             <Link to="/quote" className="inline-link">
               Tell us what you need
@@ -162,7 +162,7 @@ export function HomePage() {
           <div>
             <span className="eyebrow">Start Here</span>
             <h2>Need a website that actually feels premium?</h2>
-            <p>Let’s build something that looks better, works harder, and stays supported after launch.</p>
+            <p>Letï¿½s build something that looks better, works harder, and stays supported after launch.</p>
           </div>
           <Button to="/quote">Start Your Site</Button>
         </div>

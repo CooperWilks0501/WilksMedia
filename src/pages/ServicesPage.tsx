@@ -10,7 +10,7 @@ export function ServicesPage() {
       <PageHero
         eyebrow="Services"
         title="Built and maintained with the same level of care."
-        description="Bandit Media designs, develops, launches, and supports premium websites through a structure that stays simple for the client."
+        description="WilksMedia designs, develops, launches, and supports premium websites through a structure that stays simple for the client."
         aside={
           <>
             <span className="eyebrow">Model</span>
@@ -49,7 +49,7 @@ export function ServicesPage() {
             <span className="eyebrow">Offer Structure</span>
             <h2>Launch first. Support ongoing.</h2>
             <p>
-              The initial engagement covers strategy, design, development, and launch. After that, Bandit Media can stay on through an ongoing monthly upkeep plan for updates, refinements, and support.
+              The initial engagement covers strategy, design, development, and launch. After that, WilksMedia can stay on through an ongoing monthly upkeep plan for updates, refinements, and support.
             </p>
           </Reveal>
           <Reveal className="panel">

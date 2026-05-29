@@ -178,8 +178,8 @@ export const portfolioProjects: ProjectItem[] = [
 ];
 
 export const contactPlaceholders = {
-  email: "hello@banditmedia.co",
-  instagram: "@banditmedia",
+  email: "cooper@wilksmedia.com",
+  instagram: "@wilksmedia",
   note: "Replace placeholder contact details with the final business information before launch."
 };
 

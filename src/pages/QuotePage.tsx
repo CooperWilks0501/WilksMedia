@@ -7,7 +7,7 @@ export function QuotePage() {
       <PageHero
         eyebrow="Quote / Contact"
         title="Tell us what you need."
-        description="Whether you need a custom site from scratch or ongoing support for an existing one, Bandit Media keeps the process straightforward."
+        description="Whether you need a custom site from scratch or ongoing support for an existing one, WilksMedia keeps the process straightforward."
         aside={
           <>
             <span className="eyebrow">Confidence</span>

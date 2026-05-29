@@ -107,7 +107,7 @@ export function HomeHero() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.85, delay: 0.12 }}
           >
-            Bandit Media designs and builds premium websites with modern frontend execution, then keeps them maintained through a simple ongoing upkeep model.
+            WilksMedia designs and builds premium websites with modern frontend execution, then keeps them maintained through a simple ongoing upkeep model.
           </motion.p>
           <motion.p
             className="hero__mission"
@@ -115,7 +115,7 @@ export function HomeHero() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.85, delay: 0.18 }}
           >
-            Bandit Media builds modern, high-performing websites that make brands look sharper, sell more clearly, and stay maintained long after launch.
+            WilksMedia builds modern, high-performing websites that make brands look sharper, sell more clearly, and stay maintained long after launch.
           </motion.p>
           <motion.div
             className="hero__actions"

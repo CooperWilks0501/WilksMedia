@@ -67,7 +67,7 @@ export function PortfolioPage() {
           <div>
             <span className="eyebrow">Have A Project?</span>
             <h2>Let’s make your brand look more established online.</h2>
-            <p>Bandit Media builds premium digital experiences that are easier to trust at first glance.</p>
+            <p>WilksMedia builds premium digital experiences that are easier to trust at first glance.</p>
           </div>
           <Button to="/quote">Start a Project</Button>
         </div>

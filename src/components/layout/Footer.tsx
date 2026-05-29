@@ -6,7 +6,7 @@ export function Footer() {
     <footer className="site-footer">
       <div className="container footer-grid">
         <div>
-          <span className="eyebrow">Bandit Media</span>
+          <span className="eyebrow">WilksMedia</span>
           <p className="footer-statement">
             Premium websites with clear structure, modern execution, and ongoing upkeep built into the relationship.
           </p>
