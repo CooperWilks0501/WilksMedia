@@ -1048,12 +1048,47 @@ main {
     box-shadow: var(--shadow);
   }
 
+  /* Brandmark: drop the "WM / 01" code mark to give the brand name more room
+     and ease the squeeze against the hamburger button on small phones. */
+  .brandmark__code {
+    display: none;
+  }
+
+  .brandmark__name {
+    font-size: 1rem;
+  }
+
+  .brandmark__logo {
+    height: 34px;
+  }
+
+  /* Hero eyebrow: kill the decorative line and tighten the type so the long
+     phrase "Premium Design Studio / Website Creation + Upkeep" lays out cleanly. */
+  .hero__copy .eyebrow {
+    font-size: 0.65rem;
+    letter-spacing: 0.14em;
+  }
+
+  .hero__copy .eyebrow::before {
+    display: none;
+  }
+
   .hero {
     padding-top: 7.5rem;
   }
 
+  /* Hero h1: was clamping to roughly 3.3rem on phones, which broke an 8-word
+     headline into 4-5 cramped lines. Bring it down to a phone-appropriate range. */
   .hero__copy h1 {
-    font-size: clamp(2.7rem, 14vw, 4.4rem);
+    font-size: clamp(2rem, 8vw, 2.5rem);
+    line-height: 1.1;
+  }
+
+  /* Hero mission paragraph: the left indent + orange border swallows ~24px on
+     a narrow screen. Reclaim the full width for readability. */
+  .hero__mission {
+    padding-left: 0;
+    border-left: none;
   }
 
   .hero__metrics,
@@ -1066,8 +1101,10 @@ main {
     grid-template-columns: 1fr;
   }
 
+  /* Hero visual was eating ~500px (most of a phone viewport) before the user
+     even sees the headline. Drop it to a sensible mobile preview height. */
   .hero-visual {
-    min-height: 500px;
+    min-height: 360px;
   }
 
   .hero-visual__scan,
