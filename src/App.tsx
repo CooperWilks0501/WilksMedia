@@ -7,6 +7,7 @@ import { ServicesPage } from "./pages/ServicesPage";
 import { PortfolioPage } from "./pages/PortfolioPage";
 import { AboutPage } from "./pages/AboutPage";
 import { QuotePage } from "./pages/QuotePage";
+import { AdminLogin, ToolsPage } from "./pages/Admin";
 
 function ScrollToTop({ lenisRef }: { lenisRef: React.MutableRefObject<Lenis | null> }) {
   const location = useLocation();
@@ -68,6 +69,8 @@ export default function App() {
         <Route path="/portfolio" element={<Layout><PortfolioPage /></Layout>} />
         <Route path="/about" element={<Layout><AboutPage /></Layout>} />
         <Route path="/quote" element={<Layout><QuotePage /></Layout>} />
+        <Route path="/admin" element={<AdminLogin />} />
+        <Route path="/tools" element={<ToolsPage />} />
       </Routes>
     </>
   );

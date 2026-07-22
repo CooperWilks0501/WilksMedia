@@ -1,14 +1,28 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { Menu, X } from "lucide-react";
 import { useEffect, useState } from "react";
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { navLinks } from "../../data/siteContent";
 import { Button } from "../common/Button";
+
+// module-level so it survives Navbar remounts on navigation
+let brandClicks: number[] = [];
 
 export function Navbar() {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+
+  const handleBrandClick = (e: React.MouseEvent) => {
+    const now = Date.now();
+    brandClicks = [...brandClicks, now].filter((t) => now - t < 2000);
+    if (brandClicks.length >= 5) {
+      brandClicks = [];
+      e.preventDefault(); // stop the NavLink from navigating to "/" and overriding us
+      navigate("/admin");
+    }
+  };
 
   useEffect(() => setOpen(false), [location.pathname]);
 
@@ -22,7 +36,7 @@ export function Navbar() {
   return (
     <header className={`navbar ${scrolled ? "navbar--scrolled" : ""}`}>
       <div className="container navbar__inner">
-        <NavLink to="/" className="brandmark" aria-label="WilksMedia home">
+        <NavLink to="/" className="brandmark" aria-label="WilksMedia home" onClick={handleBrandClick}>
           <img src="/WilksMediaLogo.png" alt="" className="brandmark__logo" />
           <div className="brandmark__text">
             <span className="brandmark__code">WM / 01</span>
