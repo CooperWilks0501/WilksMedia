@@ -185,6 +185,16 @@ export const portfolioProjects: ProjectItem[] = [
     image: "https://s.wordpress.com/mshots/v1/https%3A%2F%2Fpalmettoconsulting.us%2F?w=1600",
     url: "https://palmettoconsulting.us/",
     summary: "A Columbia-based business consulting site built to project measured authority, clarify the firm's service direction, and create a polished first impression for decision-makers evaluating advisory partners."
+  },
+  {
+    name: "Example Roofing Co.",
+    category: "Roofing — Instant Estimate Tool",
+    goal: "A demonstration roofing site built around a satellite roof measuring tool, so homeowners can trace their own roof and see a real price range before anyone comes out to the house.",
+    tags: ["Roofing", "Interactive Tool", "Lead Gen"],
+    accent: "linear-gradient(135deg, rgba(31,75,63,0.95), rgba(217,138,31,0.55))",
+    image: "https://s.wordpress.com/mshots/v1/https%3A%2F%2Fcooperwilks0501.github.io%2FRoofingSiteExample%2F?w=1600",
+    url: "https://cooperwilks0501.github.io/RoofingSiteExample/",
+    summary: "A roofing contractor site with a built-in instant estimator: the homeowner types their address, traces each roof section on satellite imagery, and gets square footage and pricing calculated live from pitch, material, and waste factor. Demo build showing an interactive quoting tool, not a template brochure."
   }
 ];
 
