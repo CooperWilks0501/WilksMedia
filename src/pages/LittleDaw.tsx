@@ -174,10 +174,18 @@ function Song({ path, name, onExit }: { path: string[]; name: string; onExit: ()
         const p = await daw.readProject(dir);
         if (!alive) return;
         setProject(p);
+        const failed: string[] = [];
         for (const t of p.tracks) {
           if (!t.file) continue;
-          await engine.loadTrack(t.id, await daw.readFile(dir, t.file));
+          // One unreadable clip used to abort the whole load, leaving later
+          // tracks silent with no explanation. Skip it and report instead.
+          try {
+            await engine.loadTrack(t.id, await daw.readFile(dir, t.file));
+          } catch {
+            failed.push(t.name);
+          }
         }
+        if (failed.length && alive) setErr(`Could not load: ${failed.join(", ")}`);
         if (alive) setProject({ ...p });
       } catch (e) { setErr(String(e)); }
     })();
@@ -249,9 +257,24 @@ function Song({ path, name, onExit }: { path: string[]; name: string; onExit: ()
   async function togglePlay() {
     if (!project) return;
     if (playing || recording) { await stopRec(); stopAll(); return; }
-    await engine.unlock();
-    engine.play(project, 0, false);
-    setPlaying(true);
+    try {
+      await engine.unlock();
+      // Nothing loaded means the rAF loop would stop playback on its first
+      // frame, which looks exactly like a dead button. Say so instead.
+      if (engine.duration(project) <= 0) {
+        setErr(
+          project.tracks.some((t) => t.file)
+            ? "Takes did not load — reopen the song, or reload the page."
+            : "Nothing recorded yet. Tap the red button to record a track."
+        );
+        return;
+      }
+      engine.play(project, 0, false);
+      setPlaying(true);
+    } catch (e) {
+      setErr(`Playback failed: ${e}`);
+      stopAll();
+    }
   }
 
   async function toggleRec() {
@@ -326,7 +349,9 @@ function Song({ path, name, onExit }: { path: string[]; name: string; onExit: ()
       rec.start();
       setRecording(true);
     } catch (e) {
-      setErr(`Mic unavailable: ${e}`);
+      setErr(`Recording failed: ${e}`);
+      releaseMic();
+      setRecording(false);
     }
   }
 

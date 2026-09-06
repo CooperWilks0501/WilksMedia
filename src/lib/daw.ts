@@ -217,7 +217,9 @@ const RAMP = 0.02; // short ramp so live slider moves don't click
 /** Push a track's settings onto its live nodes. Called both when the chain is
  *  built and on every change while playing, so the mixer is editable on the fly. */
 export function applyTrack(c: Chain, t: Track, anySolo: boolean, ramp = RAMP) {
-  c.vol.volume.rampTo(Tone.gainToDb(t.gain), ramp);
+  // gainToDb(0) is -Infinity and Web Audio throws on a non-finite ramp
+  // target, so floor silence at -60dB instead.
+  c.vol.volume.rampTo(t.gain > 0.001 ? Tone.gainToDb(t.gain) : -60, ramp);
   c.vol.pan.rampTo(t.pan, ramp);
   c.vol.mute = !isAudible(t, anySolo);
 
