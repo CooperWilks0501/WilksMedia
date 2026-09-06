@@ -150,7 +150,8 @@ function Song({ path, name, onExit }: { path: string[]; name: string; onExit: ()
   const [project, setProject] = useState<Project | null>(null);
   const [armed, setArmed] = useState<string | null>(null);
   const [fxFor, setFxFor] = useState<string | null>(null);
-  const [menu, setMenu] = useState<"more" | "bpm" | "rename" | null>(null);
+  const [menu, setMenu] = useState<"more" | "bpm" | "rename" | "input" | null>(null);
+  const [inputs, setInputs] = useState<MediaDeviceInfo[]>([]);
   const [recording, setRecording] = useState(false);
   const [playing, setPlaying] = useState(false);
   const [pos, setPos] = useState(0);
@@ -184,11 +185,40 @@ function Song({ path, name, onExit }: { path: string[]; name: string; onExit: ()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [name, path.join("/")]);
 
+  // State updates immediately so the UI and the live audio graph react at once;
+  // the OPFS write is debounced so dragging a fader is not hundreds of writes.
+  const saveTimer = useRef<number>(0);
   const save = useCallback((p: Project) => {
     setProject(p);
-    daw.writeProject(dir, p).catch((e) => setErr(String(e)));
+    clearTimeout(saveTimer.current);
+    saveTimer.current = window.setTimeout(
+      () => daw.writeProject(dir, p).catch((e) => setErr(String(e))),
+      300
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dir.join("/")]);
+
+  // flush a pending write if the screen closes mid-drag
+  useEffect(() => () => {
+    if (saveTimer.current) {
+      clearTimeout(saveTimer.current);
+      if (projRef.current) daw.writeProject(dir, projRef.current).catch(() => {});
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dir.join("/")]);
+
+  // every mixer change reaches the running audio graph without restarting it
+  useEffect(() => {
+    const refresh = () => daw.listInputs().then(setInputs).catch(() => {});
+    refresh();
+    navigator.mediaDevices?.addEventListener?.("devicechange", refresh);
+    return () => navigator.mediaDevices?.removeEventListener?.("devicechange", refresh);
+  }, []);
+
+  useEffect(() => {
+    if (project) engine.update(project);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [project]);
 
   const patch = (id: string, fn: (t: Track) => Track) => {
     const p = projRef.current;
@@ -236,13 +266,18 @@ function Song({ path, name, onExit }: { path: string[]; name: string; onExit: ()
       // echoCancellation lets iOS subtract speaker bleed from the take. It costs
       // input quality (voice-processing unit ducks and gates), so it is a
       // per-song choice: on for speaker overdubs, off when wearing headphones.
-      streamRef.current = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: p.bleedGuard,
-          autoGainControl: false,
-          noiseSuppression: false
-        }
-      });
+      const audio: MediaTrackConstraints = {
+        echoCancellation: p.bleedGuard,
+        autoGainControl: false,
+        noiseSuppression: false
+      };
+      // A saved device can be gone (headphones unplugged), so fall back to the
+      // default input rather than failing the take outright.
+      if (p.inputId) audio.deviceId = { exact: p.inputId };
+      streamRef.current = await navigator.mediaDevices
+        .getUserMedia({ audio })
+        .catch(() => navigator.mediaDevices.getUserMedia({ audio: { ...audio, deviceId: undefined } }));
+      daw.listInputs().then(setInputs);
       // armed track is overwritten; nothing armed means a fresh track
       let target = p.tracks.find((t) => t.id === armed);
       let next = p;
@@ -454,6 +489,9 @@ function Song({ path, name, onExit }: { path: string[]; name: string; onExit: ()
             onClick={() => save({ ...project, click: !project.click })}>
             Count-in click: {project.click ? "On" : "Off"}
           </button>
+          <button className="ld-btn" onClick={() => setMenu("input")}>
+            Microphone: {inputs.find((d) => d.deviceId === project.inputId)?.label || "Default"}
+          </button>
           <button className={`ld-btn ${project.bleedGuard ? "ld-btn--primary" : ""}`}
             onClick={() => save({ ...project, bleedGuard: !project.bleedGuard })}>
             Speaker bleed removal: {project.bleedGuard ? "On" : "Off"}
@@ -470,6 +508,26 @@ function Song({ path, name, onExit }: { path: string[]; name: string; onExit: ()
             <small>Applied to new takes. Positive pulls the take earlier.</small>
           </label>
           <button className="ld-btn" onClick={() => { setMenu(null); exportWav(); }}><Download size={18} /> Export WAV</button>
+        </Sheet>
+      )}
+
+      {menu === "input" && (
+        <Sheet title="Recording Input" onClose={() => setMenu(null)}>
+          <button className={`ld-btn ${project.inputId === "" ? "ld-btn--primary" : ""}`}
+            onClick={() => save({ ...project, inputId: "" })}>
+            System Default
+          </button>
+          {inputs.map((d) => (
+            <button key={d.deviceId} className={`ld-btn ${project.inputId === d.deviceId ? "ld-btn--primary" : ""}`}
+              onClick={() => save({ ...project, inputId: d.deviceId })}>
+              {d.label || "Unnamed input"}
+            </button>
+          ))}
+          <small className="ld-note">
+            {inputs.length === 0 || !inputs.some((d) => d.label)
+              ? "Record once and allow mic access — iOS hides input names until then."
+              : "Plug in headphones with a mic and pick it here: playback goes to the headphones instead of the speaker, so nothing bleeds into the take."}
+          </small>
         </Sheet>
       )}
 

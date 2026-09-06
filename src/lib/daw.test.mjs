@@ -8,11 +8,11 @@ import ts from "typescript";
 // daw.ts pulls in Tone (needs a browser AudioContext), so compile the file and
 // evaluate only the pure functions under test.
 const src = readFileSync(new URL("./daw.ts", import.meta.url), "utf8");
-const body = src.slice(src.indexOf("export function peak"), src.indexOf("export class Engine"));
+const body = src.slice(src.indexOf("export function isAudible"), src.indexOf("export class Engine"));
 const js = ts.transpileModule(body, {
   compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2020 }
 }).outputText;
-const { encodeWav, peak, normalizeGain, MAX_GAIN } = await import("data:text/javascript," + encodeURIComponent(js));
+const { encodeWav, peak, normalizeGain, MAX_GAIN, isAudible } = await import("data:text/javascript," + encodeURIComponent(js));
 
 // --- encodeWav: header fields and sample round-trip -----------------------
 const sampleRate = 48000, frames = 100;
@@ -74,5 +74,15 @@ for (const p of [0.001, 0.05, 0.2, 0.7, 1]) {
   const g = normalizeGain(mono([p]));
   assert.ok(g >= 0.1 && g <= MAX_GAIN, `gain stays in fader range for peak ${p}`);
 }
+
+// --- mute / solo ---------------------------------------------------------
+const t = (mute, solo) => ({ mute, solo });
+assert.equal(isAudible(t(false, false), false), true, "plain track plays");
+assert.equal(isAudible(t(true, false), false), false, "muted track is silent");
+// once anything is soloed, non-soloed tracks drop out
+assert.equal(isAudible(t(false, false), true), false, "unsoloed drops out when another is soloed");
+assert.equal(isAudible(t(false, true), true), true, "soloed track plays");
+// mute beats solo on the same track
+assert.equal(isAudible(t(true, true), true), false, "mute overrides solo");
 
 console.log("daw self-check ok");

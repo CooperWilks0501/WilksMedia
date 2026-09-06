@@ -25,6 +25,7 @@ export type Project = {
   bpm: number;
   click: boolean;
   bleedGuard: boolean; // let iOS echo-cancel speaker bleed out of new takes
+  inputId: string; // deviceId of the mic to record from; "" means system default
   offsetMs: number; // manual sync nudge applied to every new take
   tracks: Track[];
 };
@@ -59,7 +60,7 @@ export function newTrack(name: string): Track {
 }
 
 export function newProject(name: string): Project {
-  return { name, bpm: 92, click: true, bleedGuard: true, offsetMs: 0, tracks: [] };
+  return { name, bpm: 92, click: true, bleedGuard: true, inputId: "", offsetMs: 0, tracks: [] };
 }
 
 // ------------------------------------------------------------------ fs
@@ -196,32 +197,62 @@ export async function requestPersist() {
 // `ready` resolves when Reverb has generated its impulse response. Live
 // playback can ignore it (it fills in within ms); an offline render MUST await
 // it or the mixdown comes out with no reverb at all.
-type Chain = { player: Tone.Player; meter: Tone.Meter; vol: Tone.PanVol; ready: Promise<unknown> };
+// `ready` resolves when Reverb has generated its impulse response. Live
+// playback can ignore it (it fills in within ms); an offline render MUST await
+// it or the mixdown comes out with no reverb at all.
+type Chain = {
+  player: Tone.Player;
+  meter: Tone.Meter;
+  vol: Tone.PanVol;
+  eq: Tone.EQ3;
+  comp: Tone.Compressor;
+  dist: Tone.Distortion;
+  delay: Tone.FeedbackDelay;
+  reverb: Tone.Reverb;
+  ready: Promise<unknown>;
+};
+
+const RAMP = 0.02; // short ramp so live slider moves don't click
+
+/** Push a track's settings onto its live nodes. Called both when the chain is
+ *  built and on every change while playing, so the mixer is editable on the fly. */
+export function applyTrack(c: Chain, t: Track, anySolo: boolean, ramp = RAMP) {
+  c.vol.volume.rampTo(Tone.gainToDb(t.gain), ramp);
+  c.vol.pan.rampTo(t.pan, ramp);
+  c.vol.mute = !isAudible(t, anySolo);
+
+  c.eq.low.rampTo(t.eq.lo, ramp);
+  c.eq.mid.rampTo(t.eq.mid, ramp);
+  c.eq.high.rampTo(t.eq.hi, ramp);
+
+  c.comp.threshold.rampTo(t.fx.comp.on ? -6 - t.fx.comp.amt * 34 : 0, ramp);
+  c.comp.ratio.rampTo(t.fx.comp.on ? 1 + t.fx.comp.amt * 11 : 1, ramp);
+
+  c.dist.distortion = t.fx.dist.amt;
+  c.dist.wet.rampTo(t.fx.dist.on ? 1 : 0, ramp);
+  c.delay.wet.rampTo(t.fx.delay.on ? t.fx.delay.amt : 0, ramp);
+  // ponytail: reverb decay is fixed and the knob rides wet only. Changing decay
+  // regenerates the impulse response asynchronously, which is not something to
+  // do on every frame of a slider drag.
+  c.reverb.wet.rampTo(t.fx.reverb.on ? t.fx.reverb.amt : 0, ramp);
+}
 
 function buildChain(t: Track, buffer: AudioBuffer, anySolo: boolean, dest: Tone.InputNode): Chain {
   const player = new Tone.Player(buffer);
-  const eq = new Tone.EQ3(t.eq.lo, t.eq.mid, t.eq.hi);
-  const comp = new Tone.Compressor({
-    threshold: t.fx.comp.on ? -6 - t.fx.comp.amt * 34 : 0,
-    ratio: t.fx.comp.on ? 1 + t.fx.comp.amt * 11 : 1
-  });
-  const dist = new Tone.Distortion({ distortion: t.fx.dist.amt, wet: t.fx.dist.on ? 1 : 0 });
-  const delay = new Tone.FeedbackDelay({
-    delayTime: 0.3,
-    feedback: 0.3,
-    wet: t.fx.delay.on ? t.fx.delay.amt : 0
-  });
-  const reverb = new Tone.Reverb({
-    decay: 1 + t.fx.reverb.amt * 5,
-    wet: t.fx.reverb.on ? t.fx.reverb.amt : 0
-  });
-  const audible = !t.mute && (!anySolo || t.solo);
-  const vol = new Tone.PanVol(t.pan, Tone.gainToDb(audible ? t.gain : 0));
+  const eq = new Tone.EQ3(0, 0, 0);
+  const comp = new Tone.Compressor();
+  const dist = new Tone.Distortion();
+  const delay = new Tone.FeedbackDelay({ delayTime: 0.3, feedback: 0.3, wet: 0 });
+  const reverb = new Tone.Reverb({ decay: 3, wet: 0 });
+  const vol = new Tone.PanVol();
   const meter = new Tone.Meter({ smoothing: 0.7 });
 
   player.chain(eq, comp, dist, delay, reverb, vol, dest);
   vol.connect(meter);
-  return { player, meter, vol, ready: reverb.ready };
+
+  const chain = { player, meter, vol, eq, comp, dist, delay, reverb, ready: reverb.ready };
+  applyTrack(chain, t, anySolo, 0);
+  return chain;
 }
 
 function clickAt(ctx: BaseAudioContext, time: number, accent: boolean) {
@@ -234,6 +265,12 @@ function clickAt(ctx: BaseAudioContext, time: number, accent: boolean) {
   osc.connect(g).connect(ctx.destination);
   osc.start(time);
   osc.stop(time + 0.06);
+}
+
+/** Solo wins over everything except an explicit mute: with any track soloed,
+ *  only soloed tracks are heard. Easy to get backwards, hence the self-check. */
+export function isAudible(t: { mute: boolean; solo: boolean }, anySolo: boolean) {
+  return !t.mute && (!anySolo || t.solo);
 }
 
 /** Loudest absolute sample in the buffer. */
@@ -351,6 +388,16 @@ export class Engine {
     return at;
   }
 
+  /** Re-apply every track's settings to the running graph, without restarting. */
+  update(p: Project) {
+    if (!this.playing) return;
+    const anySolo = p.tracks.some((t) => t.solo);
+    this.chains.forEach((c, i) => {
+      const t = p.tracks.find((x) => x.id === this.chainIds[i]);
+      if (t) applyTrack(c, t, anySolo);
+    });
+  }
+
   position() {
     if (!this.playing) return this.startOffset;
     return Math.max(0, Tone.getContext().currentTime - this.startedAt) + this.startOffset;
@@ -374,9 +421,7 @@ export class Engine {
       } catch {
         /* already stopped */
       }
-      c.player.dispose();
-      c.meter.dispose();
-      c.vol.dispose();
+      for (const n of [c.player, c.meter, c.vol, c.eq, c.comp, c.dist, c.delay, c.reverb]) n.dispose();
     }
     this.chains = [];
     this.chainIds = [];
@@ -403,6 +448,14 @@ export class Engine {
     }, dur);
     return rendered.get() as AudioBuffer;
   }
+}
+
+/** Audio inputs available for recording. Labels are blank until the user has
+ *  granted mic permission at least once, so call after a successful capture. */
+export async function listInputs(): Promise<MediaDeviceInfo[]> {
+  if (!navigator.mediaDevices?.enumerateDevices) return [];
+  const all = await navigator.mediaDevices.enumerateDevices();
+  return all.filter((d) => d.kind === "audioinput");
 }
 
 export function pickMime() {
