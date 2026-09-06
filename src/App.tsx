@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { lazy, Suspense, useEffect, useRef } from "react";
 import { Route, Routes, useLocation } from "react-router-dom";
 import Lenis from "lenis";
 import { Layout } from "./components/layout/Layout";
@@ -8,6 +8,10 @@ import { PortfolioPage } from "./pages/PortfolioPage";
 import { AboutPage } from "./pages/AboutPage";
 import { QuotePage } from "./pages/QuotePage";
 import { AdminLogin, ToolsPage } from "./pages/Admin";
+// Tone.js is ~350kb; keep it out of the marketing bundle.
+const LittleDawPage = lazy(() =>
+  import("./pages/LittleDaw").then((m) => ({ default: m.LittleDawPage }))
+);
 
 function ScrollToTop({ lenisRef }: { lenisRef: React.MutableRefObject<Lenis | null> }) {
   const location = useLocation();
@@ -71,6 +75,7 @@ export default function App() {
         <Route path="/quote" element={<Layout><QuotePage /></Layout>} />
         <Route path="/admin" element={<AdminLogin />} />
         <Route path="/tools" element={<ToolsPage />} />
+        <Route path="/tools/littledaw" element={<Suspense fallback={null}><LittleDawPage /></Suspense>} />
       </Routes>
     </>
   );

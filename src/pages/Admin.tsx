@@ -44,8 +44,9 @@ export function AdminLogin() {
 
 // Add your tools here — each becomes a button in the left tab.
 // url: embed a live site in an iframe. view: "music" renders the music list.
-const tools: { label: string; url?: string; view?: "music" }[] = [
-  { label: "Music", view: "music" }
+const tools: { label: string; url?: string; view?: "music"; to?: string }[] = [
+  { label: "Music", view: "music" },
+  { label: "Little DAW", to: "/tools/littledaw" }
 ];
 
 // Sub-sections shown under "Music" in the tab. Add a category here + tag sites with `cat`.
@@ -105,6 +106,7 @@ function MusicTools({ cat }: { cat: string | null }) {
 }
 
 export function ToolsPage() {
+  const navigate = useNavigate();
   const [open, setOpen] = useState(true);
   const [active, setActive] = useState(0);
   const [musicOpen, setMusicOpen] = useState(true);
@@ -130,6 +132,7 @@ export function ToolsPage() {
                   <button
                     className={`tools-tab__item ${i === active ? "tools-tab__item--active" : ""}`}
                     onClick={() => {
+                      if (t.to) return navigate(t.to);
                       setActive(i);
                       if (t.view === "music") setMusicOpen((v) => !v);
                     }}

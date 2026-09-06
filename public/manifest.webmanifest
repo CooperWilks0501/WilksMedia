@@ -1,0 +1,19 @@
+{
+  "name": "Little DAW",
+  "short_name": "Little DAW",
+  "description": "Multitrack recorder that saves everything on your phone.",
+  "start_url": "/tools/littledaw",
+  "scope": "/tools/littledaw",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0d0f13",
+  "theme_color": "#0d0f13",
+  "icons": [
+    {
+      "src": "/WilksMediaLogo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

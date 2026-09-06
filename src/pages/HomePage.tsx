@@ -175,7 +175,7 @@ export function HomePage() {
           <div>
             <span className="eyebrow">Start Here</span>
             <h2>Need a website that actually feels premium?</h2>
-            <p>Let�s build something that looks better, works harder, and stays supported after launch.</p>
+            <p>Let's build something that looks better, works harder, and stays supported after launch.</p>
           </div>
           <Button to="/quote">Start Your Site</Button>
         </div>
