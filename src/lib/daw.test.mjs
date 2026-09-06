@@ -85,4 +85,13 @@ assert.equal(isAudible(t(false, true), true), true, "soloed track plays");
 // mute beats solo on the same track
 assert.equal(isAudible(t(true, true), true), false, "mute overrides solo");
 
+// --- ramp safety ---------------------------------------------------------
+// Tone's rampTo() picks an EXPONENTIAL ramp for decibel params. Exponential
+// ramps through or to zero produce NaN, which silences the whole chain.
+// Compressor.threshold is negative dB heading to 0 when bypassed, so a bare
+// rampTo() there kills all playback with no error. Keep it linear.
+const applySrc = src.slice(src.indexOf("export function applyTrack"), src.indexOf("function buildChain"));
+assert.ok(!/[^r]\.rampTo\(/.test(applySrc), "applyTrack must use linearRampTo, never rampTo");
+assert.ok(applySrc.includes("linearRampTo"), "applyTrack still ramps its params");
+
 console.log("daw self-check ok");

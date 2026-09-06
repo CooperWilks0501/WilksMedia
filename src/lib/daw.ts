@@ -217,26 +217,31 @@ const RAMP = 0.02; // short ramp so live slider moves don't click
 /** Push a track's settings onto its live nodes. Called both when the chain is
  *  built and on every change while playing, so the mixer is editable on the fly. */
 export function applyTrack(c: Chain, t: Track, anySolo: boolean, ramp = RAMP) {
-  // gainToDb(0) is -Infinity and Web Audio throws on a non-finite ramp
-  // target, so floor silence at -60dB instead.
-  c.vol.volume.rampTo(t.gain > 0.001 ? Tone.gainToDb(t.gain) : -60, ramp);
-  c.vol.pan.rampTo(t.pan, ramp);
+  // Always linearRampTo, never rampTo: rampTo picks an EXPONENTIAL ramp for
+  // decibel params, and an exponential ramp through or to zero yields NaN,
+  // which silences the whole chain downstream. Compressor.threshold holds
+  // negative dB and targets 0 when bypassed, so it hits exactly that case.
+  // gainToDb(0) is -Infinity, and any ramp rejects a non-finite target.
+  c.vol.volume.linearRampTo(t.gain > 0.001 ? Tone.gainToDb(t.gain) : -60, ramp);
+  c.vol.pan.linearRampTo(t.pan, ramp);
   c.vol.mute = !isAudible(t, anySolo);
 
-  c.eq.low.rampTo(t.eq.lo, ramp);
-  c.eq.mid.rampTo(t.eq.mid, ramp);
-  c.eq.high.rampTo(t.eq.hi, ramp);
+  c.eq.low.linearRampTo(t.eq.lo, ramp);
+  c.eq.mid.linearRampTo(t.eq.mid, ramp);
+  c.eq.high.linearRampTo(t.eq.hi, ramp);
 
-  c.comp.threshold.rampTo(t.fx.comp.on ? -6 - t.fx.comp.amt * 34 : 0, ramp);
-  c.comp.ratio.rampTo(t.fx.comp.on ? 1 + t.fx.comp.amt * 11 : 1, ramp);
+  c.comp.threshold.linearRampTo(t.fx.comp.on ? -6 - t.fx.comp.amt * 34 : 0, ramp);
+  c.comp.ratio.linearRampTo(t.fx.comp.on ? 1 + t.fx.comp.amt * 11 : 1, ramp);
 
-  c.dist.distortion = t.fx.dist.amt;
-  c.dist.wet.rampTo(t.fx.dist.on ? 1 : 0, ramp);
-  c.delay.wet.rampTo(t.fx.delay.on ? t.fx.delay.amt : 0, ramp);
+  // setting .distortion rebuilds a 4096-sample waveshaper curve, so skip it
+  // unless the knob actually moved
+  if (c.dist.distortion !== t.fx.dist.amt) c.dist.distortion = t.fx.dist.amt;
+  c.dist.wet.linearRampTo(t.fx.dist.on ? 1 : 0, ramp);
+  c.delay.wet.linearRampTo(t.fx.delay.on ? t.fx.delay.amt : 0, ramp);
   // ponytail: reverb decay is fixed and the knob rides wet only. Changing decay
   // regenerates the impulse response asynchronously, which is not something to
   // do on every frame of a slider drag.
-  c.reverb.wet.rampTo(t.fx.reverb.on ? t.fx.reverb.amt : 0, ramp);
+  c.reverb.wet.linearRampTo(t.fx.reverb.on ? t.fx.reverb.amt : 0, ramp);
 }
 
 function buildChain(t: Track, buffer: AudioBuffer, anySolo: boolean, dest: Tone.InputNode): Chain {
