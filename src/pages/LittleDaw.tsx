@@ -540,6 +540,7 @@ function Song({ path, name, onExit }: { path: string[]; name: string; onExit: ()
             <small>Applied to new takes. Positive pulls the take earlier.</small>
           </label>
           <button className="ld-btn" onClick={() => { setMenu(null); exportWav(); }}><Download size={18} /> Export WAV</button>
+          <small className="ld-note">Build {daw.BUILD}</small>
         </Sheet>
       )}
 

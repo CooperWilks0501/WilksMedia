@@ -1,6 +1,10 @@
 // Little DAW: OPFS-backed project storage + Web Audio/Tone playback engine.
 import * as Tone from "tone";
 
+declare const __BUILD__: string;
+/** Build timestamp, shown in the song menu so a stale standalone app is obvious. */
+export const BUILD = typeof __BUILD__ === "string" ? __BUILD__ : "dev";
+
 // ---------------------------------------------------------------- types
 
 export type FxName = "reverb" | "delay" | "comp" | "dist";
