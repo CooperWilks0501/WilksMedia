@@ -186,3 +186,23 @@
 }
 
 .ld-note { color: var(--ld-dim); font-size: 12px; line-height: 1.5; margin: -4px 2px 4px; }
+
+/* Touch: this is an instrument, not a document. Sliders own their gesture
+   outright so a drag never turns into a page scroll or an edge swipe, and
+   double-tap zoom is off everywhere so repeated taps on transport buttons
+   don't zoom the UI. */
+.ld { touch-action: manipulation; }
+.ld input[type="range"] { touch-action: none; }
+
+/* Keep controls off the very edge, where iOS claims the swipe-back gesture. */
+.ld-track, .ld-sheet__body { padding-left: max(16px, env(safe-area-inset-left)); padding-right: max(16px, env(safe-area-inset-right)); }
+
+.ld-crash {
+  position: fixed; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 12px; padding: 24px;
+  background: #0d0f13; color: #e8eaf0; text-align: center;
+  font: 15px/1.5 -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+}
+.ld-crash h1 { font-size: 18px; margin: 0; }
+.ld-crash p { margin: 0; color: #8a92a6; font-size: 13px; word-break: break-word; }
+.ld-crash .ld-btn { max-width: 220px; margin-top: 8px; border: 1px solid #262b35; background: #171a21; border-radius: 12px; padding: 14px; color: inherit; }

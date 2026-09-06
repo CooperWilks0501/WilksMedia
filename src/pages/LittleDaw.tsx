@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Component, useCallback, useEffect, useRef, useState } from "react";
+import type { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ChevronLeft, Folder, Music2, Plus, FolderPlus, Play, Square, Circle,
@@ -575,6 +576,26 @@ function Song({ path, name, onExit }: { path: string[]; name: string; onExit: ()
   );
 }
 
+/** Without this, any thrown render error unmounts the tree and leaves a blank
+ *  white page with nothing to go on. */
+class Boundary extends Component<{ children: ReactNode }, { err: string }> {
+  state = { err: "" };
+  static getDerivedStateFromError(e: unknown) {
+    return { err: String(e) };
+  }
+  render() {
+    if (!this.state.err) return this.props.children;
+    return (
+      <div className="ld-crash">
+        <h1>Little DAW hit an error</h1>
+        <p>{this.state.err}</p>
+        <p>Your saved songs are fine — they live on the device, not in this screen.</p>
+        <button className="ld-btn" onClick={() => location.reload()}>Reload</button>
+      </div>
+    );
+  }
+}
+
 // ---------------------------------------------------------------- page
 
 export function LittleDawPage() {
@@ -589,7 +610,19 @@ export function LittleDawPage() {
     return () => { document.body.classList.remove("ld-body"); };
   }, []);
 
+  // Swipe-from-edge fires history.back(). Opened directly or from the home
+  // screen there is no previous entry, so the gesture lands on a blank page
+  // mid-drag. Park an extra entry and put it back whenever it is popped, so
+  // the swipe does nothing and "Back to Tools" stays the only way out.
+  useEffect(() => {
+    history.pushState(null, "", location.href);
+    const onPop = () => history.pushState(null, "", location.href);
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+
   return (
+    <Boundary>
     <div className="ld">
       {open ? (
         <Song path={path} name={open} onExit={() => setOpen(null)} />
@@ -602,5 +635,6 @@ export function LittleDawPage() {
         </>
       )}
     </div>
+    </Boundary>
   );
 }
