@@ -300,6 +300,10 @@ function Song({ path, name, onExit }: { path: string[]; name: string; onExit: ()
       streamRef.current = await navigator.mediaDevices
         .getUserMedia({ audio })
         .catch(() => navigator.mediaDevices.getUserMedia({ audio: { ...audio, deviceId: undefined } }));
+      // Opening the mic just changed the iOS audio session, which suspends the
+      // AudioContext. Resume it before scheduling, or the count-in and the
+      // backing tracks are scheduled onto a clock that never ticks.
+      await engine.unlock();
       daw.listInputs().then(setInputs);
       // armed track is overwritten; nothing armed means a fresh track
       let target = p.tracks.find((t) => t.id === armed);
@@ -312,7 +316,9 @@ function Song({ path, name, onExit }: { path: string[]; name: string; onExit: ()
       }
       const id = target.id;
 
-      const rec = new MediaRecorder(streamRef.current, { mimeType: daw.pickMime() });
+      // an empty mimeType makes the MediaRecorder constructor throw
+      const mime = daw.pickMime();
+      const rec = new MediaRecorder(streamRef.current, mime ? { mimeType: mime } : undefined);
       const chunks: BlobPart[] = [];
       rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
       rec.onstart = () => {

@@ -345,8 +345,14 @@ export class Engine {
   private startOffset = 0;
   playing = false;
 
+  /** Bring the audio clock back up. iOS suspends or "interrupts" the context
+   *  whenever the audio session changes — opening the mic does exactly that —
+   *  and a stopped context never advances currentTime, so nothing scheduled
+   *  ever fires. Call before anything that schedules, not just on first touch. */
   async unlock() {
     await Tone.start();
+    const raw = Tone.getContext().rawContext as unknown as AudioContext;
+    if (raw.state !== "running") await raw.resume();
   }
 
   async loadTrack(id: string, file: File) {
