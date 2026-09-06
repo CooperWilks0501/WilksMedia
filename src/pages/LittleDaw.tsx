@@ -230,11 +230,12 @@ function Song({ path, name, onExit }: { path: string[]; name: string; onExit: ()
     if (!p) return;
     try {
       await engine.unlock();
-      if (!streamRef.current) {
-        streamRef.current = await navigator.mediaDevices.getUserMedia({
-          audio: { echoCancellation: false, autoGainControl: false, noiseSuppression: false }
-        });
-      }
+      // Acquire per take and release on stop. Holding the stream open pins
+      // iOS in PlayAndRecord, which attenuates playback and can route it to
+      // the earpiece — everything sounds quiet until the mic is let go.
+      streamRef.current = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: false, autoGainControl: false, noiseSuppression: false }
+      });
       // armed track is overwritten; nothing armed means a fresh track
       let target = p.tracks.find((t) => t.id === armed);
       let next = p;
@@ -266,7 +267,16 @@ function Song({ path, name, onExit }: { path: string[]; name: string; onExit: ()
           const file = `${take.id}-${Date.now()}.dat`;
           await daw.writeFile(await daw.dirAt(dir, true), file, blob);
           await engine.loadTrack(take.id, new File([blob], file));
-          save({ ...cur, tracks: cur.tracks.map((t) => (t.id === take.id ? { ...t, file, trimMs: take.trimMs } : t)) });
+          // AGC is off and iOS records hot-but-quiet, so set the fader from the
+          // take's actual peak rather than leaving every track at 0.8.
+          const buf = engine.buffers.get(take.id);
+          const gain = buf ? daw.normalizeGain(buf) : 0.8;
+          save({
+            ...cur,
+            tracks: cur.tracks.map((t) =>
+              t.id === take.id ? { ...t, file, trimMs: take.trimMs, gain } : t
+            )
+          });
         } catch (e) { setErr(String(e)); }
         setBusy("");
       };
@@ -281,7 +291,13 @@ function Song({ path, name, onExit }: { path: string[]; name: string; onExit: ()
   async function stopRec() {
     if (recRef.current?.state === "recording") recRef.current.stop();
     recRef.current = null;
+    releaseMic();
     setRecording(false);
+  }
+
+  function releaseMic() {
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    streamRef.current = null;
   }
 
   async function exportWav() {
@@ -308,7 +324,8 @@ function Song({ path, name, onExit }: { path: string[]; name: string; onExit: ()
       const fname = `${id}-${Date.now()}.dat`;
       await daw.writeFile(await daw.dirAt(dir, true), fname, f);
       await engine.loadTrack(id, f);
-      patch(id, (t) => ({ ...t, file: fname, trimMs: 0 }));
+      const buf = engine.buffers.get(id);
+      patch(id, (t) => ({ ...t, file: fname, trimMs: 0, gain: buf ? daw.normalizeGain(buf) : t.gain }));
     } catch (e) { setErr(String(e)); }
     setBusy("");
   }
@@ -354,7 +371,7 @@ function Song({ path, name, onExit }: { path: string[]; name: string; onExit: ()
             <button className={`ld-tog ${t.mute ? "ld-tog--on" : ""}`} onClick={() => patch(t.id, (x) => ({ ...x, mute: !x.mute }))}>M</button>
             <button className={`ld-tog ${t.solo ? "ld-tog--on" : ""}`} onClick={() => patch(t.id, (x) => ({ ...x, solo: !x.solo }))}>S</button>
             <button className="ld-tog" onClick={() => setFxFor(t.id)} aria-label={`Effects for ${t.name}`}><Settings2 size={16} /></button>
-            <input className="ld-fader" type="range" min={0} max={1.5} step={0.01} value={t.gain}
+            <input className="ld-fader" type="range" min={0} max={daw.MAX_GAIN} step={0.01} value={t.gain}
               onChange={(e) => patch(t.id, (x) => ({ ...x, gain: +e.target.value }))} aria-label={`${t.name} volume`} />
             <div className="ld-meter"><i style={{ width: `${(levels[t.id] ?? 0) * 100}%` }} /></div>
           </div>
@@ -405,6 +422,13 @@ function Song({ path, name, onExit }: { path: string[]; name: string; onExit: ()
               onChange={(e) => patch(fxTrack.id, (t) => ({ ...t, pan: +e.target.value }))} aria-label="Pan" />
             <button className="ld-tog" onClick={() => patch(fxTrack.id, (t) => ({ ...t, pan: 0 }))}>C</button>
           </div>
+          <button className="ld-btn" disabled={!fxTrack.file}
+            onClick={() => {
+              const buf = engine.buffers.get(fxTrack.id);
+              if (buf) patch(fxTrack.id, (t) => ({ ...t, gain: daw.normalizeGain(buf) }));
+            }}>
+            Normalize Level
+          </button>
           <label className="ld-btn">
             Import Audio File
             <input type="file" accept="audio/*" hidden

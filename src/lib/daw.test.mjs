@@ -8,11 +8,11 @@ import ts from "typescript";
 // daw.ts pulls in Tone (needs a browser AudioContext), so compile the file and
 // evaluate only the pure functions under test.
 const src = readFileSync(new URL("./daw.ts", import.meta.url), "utf8");
-const body = src.slice(src.indexOf("export function encodeWav"), src.indexOf("export class Engine"));
-const js = ts.transpileModule("export " + body.replace(/^export /gm, ""), {
+const body = src.slice(src.indexOf("export function peak"), src.indexOf("export class Engine"));
+const js = ts.transpileModule(body, {
   compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2020 }
 }).outputText;
-const { encodeWav } = await import("data:text/javascript," + encodeURIComponent(js));
+const { encodeWav, peak, normalizeGain, MAX_GAIN } = await import("data:text/javascript," + encodeURIComponent(js));
 
 // --- encodeWav: header fields and sample round-trip -----------------------
 const sampleRate = 48000, frames = 100;
@@ -51,5 +51,28 @@ assert.ok(trim(10, 10 + lead, 0) > 2000, "4 beats at 92bpm is over 2s");
 // more trim = more removed from the front = the take lands earlier
 assert.equal(trim(10, 10.5, 50), 550, "positive nudge pulls the take earlier");
 assert.equal(trim(10, 10.5, -50), 450, "negative nudge pushes it later");
+
+// --- level normalization -------------------------------------------------
+// iOS records quiet with AGC off, so the fader is set from the take's peak.
+// Float32Array rounds, so compare with a tolerance.
+const near = (a, b, msg) => assert.ok(Math.abs(a - b) < 1e-6, `${msg} (got ${a}, want ${b})`);
+const mono = (samples) => ({
+  numberOfChannels: 1, length: samples.length, sampleRate,
+  getChannelData: () => Float32Array.from(samples)
+});
+
+near(peak(mono([0.1, -0.6, 0.3])), 0.6, "peak scans both signs");
+near(peak({ numberOfChannels: 2, length: 1, sampleRate,
+  getChannelData: (c) => Float32Array.from([c === 0 ? 0.2 : 0.9]) }), 0.9, "peak scans every channel");
+
+near(normalizeGain(mono([0.35])), 2, "half-level take gets 2x");
+near(normalizeGain(mono([1.0])), 0.7, "peaking take is pulled down, not left alone");
+assert.ok(normalizeGain(mono([1.0])) < 1, "hot take must attenuate");
+assert.equal(normalizeGain(mono([0.07])), MAX_GAIN, "very quiet take clamps at max gain");
+assert.equal(normalizeGain(mono([0, 0.0001, -0.0002])), 0.8, "silence keeps the default fader");
+for (const p of [0.001, 0.05, 0.2, 0.7, 1]) {
+  const g = normalizeGain(mono([p]));
+  assert.ok(g >= 0.1 && g <= MAX_GAIN, `gain stays in fader range for peak ${p}`);
+}
 
 console.log("daw self-check ok");

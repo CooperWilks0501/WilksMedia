@@ -195,7 +195,7 @@ export async function requestPersist() {
 // it or the mixdown comes out with no reverb at all.
 type Chain = { player: Tone.Player; meter: Tone.Meter; vol: Tone.PanVol; ready: Promise<unknown> };
 
-function buildChain(t: Track, buffer: AudioBuffer, anySolo: boolean): Chain {
+function buildChain(t: Track, buffer: AudioBuffer, anySolo: boolean, dest: Tone.InputNode): Chain {
   const player = new Tone.Player(buffer);
   const eq = new Tone.EQ3(t.eq.lo, t.eq.mid, t.eq.hi);
   const comp = new Tone.Compressor({
@@ -216,7 +216,7 @@ function buildChain(t: Track, buffer: AudioBuffer, anySolo: boolean): Chain {
   const vol = new Tone.PanVol(t.pan, Tone.gainToDb(audible ? t.gain : 0));
   const meter = new Tone.Meter({ smoothing: 0.7 });
 
-  player.chain(eq, comp, dist, delay, reverb, vol, Tone.getDestination());
+  player.chain(eq, comp, dist, delay, reverb, vol, dest);
   vol.connect(meter);
   return { player, meter, vol, ready: reverb.ready };
 }
@@ -232,6 +232,29 @@ function clickAt(ctx: BaseAudioContext, time: number, accent: boolean) {
   osc.start(time);
   osc.stop(time + 0.06);
 }
+
+/** Loudest absolute sample in the buffer. */
+export function peak(buf: AudioBuffer) {
+  let max = 0;
+  for (let c = 0; c < buf.numberOfChannels; c++) {
+    const d = buf.getChannelData(c);
+    for (let i = 0; i < d.length; i++) {
+      const v = Math.abs(d[i]);
+      if (v > max) max = v;
+    }
+  }
+  return max;
+}
+
+/** Fader setting that brings a take to a sane level. iOS mic input is quiet
+ *  and we deliberately record with AGC off, so takes need making up. */
+export function normalizeGain(buf: AudioBuffer) {
+  const p = peak(buf);
+  if (p < 0.0005) return 0.8; // silence: leave it alone rather than boosting noise
+  return Math.max(0.1, Math.min(MAX_GAIN, 0.7 / p));
+}
+
+export const MAX_GAIN = 4;
 
 export function encodeWav(buf: AudioBuffer): Blob {
   const chans = buf.numberOfChannels;
@@ -270,6 +293,7 @@ export class Engine {
   buffers = new Map<string, AudioBuffer>(); // track.id -> decoded take
   private chains: Chain[] = [];
   private chainIds: string[] = [];
+  private master: Tone.Limiter | null = null;
   private startedAt = 0;
   private startOffset = 0;
   playing = false;
@@ -308,10 +332,11 @@ export class Engine {
       for (let i = 0; i < 4; i++) clickAt(raw, ctx.currentTime + 0.08 + i * spb, i === 0);
     }
 
+    this.master = new Tone.Limiter(-1).toDestination();
     for (const t of p.tracks) {
       const buf = this.buffers.get(t.id);
       if (!buf || t.id === skipId) continue;
-      const chain = buildChain(t, buf, anySolo);
+      const chain = buildChain(t, buf, anySolo, this.master);
       const offset = Math.max(0, t.trimMs) / 1000 + from;
       if (offset < buf.duration) chain.player.start(at, offset);
       this.chains.push(chain);
@@ -352,6 +377,8 @@ export class Engine {
     }
     this.chains = [];
     this.chainIds = [];
+    this.master?.dispose();
+    this.master = null;
     this.playing = false;
   }
 
@@ -361,11 +388,12 @@ export class Engine {
     if (dur <= 0) throw new Error("Nothing to export yet.");
     const anySolo = p.tracks.some((t) => t.solo);
     const rendered = await Tone.Offline(async () => {
+      const master = new Tone.Limiter(-1).toDestination();
       const chains = [];
       for (const t of p.tracks) {
         const buf = this.buffers.get(t.id);
         if (!buf) continue;
-        chains.push(buildChain(t, buf, anySolo));
+        chains.push(buildChain(t, buf, anySolo, master));
         chains[chains.length - 1].player.start(0, Math.max(0, t.trimMs) / 1000);
       }
       await Promise.all(chains.map((c) => c.ready));
