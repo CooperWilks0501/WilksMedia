@@ -24,6 +24,7 @@ export type Project = {
   name: string;
   bpm: number;
   click: boolean;
+  bleedGuard: boolean; // let iOS echo-cancel speaker bleed out of new takes
   offsetMs: number; // manual sync nudge applied to every new take
   tracks: Track[];
 };
@@ -58,7 +59,7 @@ export function newTrack(name: string): Track {
 }
 
 export function newProject(name: string): Project {
-  return { name, bpm: 92, click: true, offsetMs: 0, tracks: [] };
+  return { name, bpm: 92, click: true, bleedGuard: true, offsetMs: 0, tracks: [] };
 }
 
 // ------------------------------------------------------------------ fs
@@ -114,7 +115,9 @@ export async function list(path: string[]): Promise<Entry[]> {
 export async function readProject(path: string[]): Promise<Project> {
   const dir = await dirAt(path);
   const file = await (await dir.getFileHandle("project.json")).getFile();
-  return JSON.parse(await file.text()) as Project;
+  const saved = JSON.parse(await file.text()) as Partial<Project>;
+  // merge over defaults so projects written by older builds pick up new fields
+  return { ...newProject(saved.name ?? "Untitled"), ...saved };
 }
 
 export async function writeProject(path: string[], project: Project) {

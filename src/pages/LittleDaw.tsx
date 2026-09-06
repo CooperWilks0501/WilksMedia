@@ -233,8 +233,15 @@ function Song({ path, name, onExit }: { path: string[]; name: string; onExit: ()
       // Acquire per take and release on stop. Holding the stream open pins
       // iOS in PlayAndRecord, which attenuates playback and can route it to
       // the earpiece — everything sounds quiet until the mic is let go.
+      // echoCancellation lets iOS subtract speaker bleed from the take. It costs
+      // input quality (voice-processing unit ducks and gates), so it is a
+      // per-song choice: on for speaker overdubs, off when wearing headphones.
       streamRef.current = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: false, autoGainControl: false, noiseSuppression: false }
+        audio: {
+          echoCancellation: p.bleedGuard,
+          autoGainControl: false,
+          noiseSuppression: false
+        }
       });
       // armed track is overwritten; nothing armed means a fresh track
       let target = p.tracks.find((t) => t.id === armed);
@@ -447,6 +454,15 @@ function Song({ path, name, onExit }: { path: string[]; name: string; onExit: ()
             onClick={() => save({ ...project, click: !project.click })}>
             Count-in click: {project.click ? "On" : "Off"}
           </button>
+          <button className={`ld-btn ${project.bleedGuard ? "ld-btn--primary" : ""}`}
+            onClick={() => save({ ...project, bleedGuard: !project.bleedGuard })}>
+            Speaker bleed removal: {project.bleedGuard ? "On" : "Off"}
+          </button>
+          <small className="ld-note">
+            {project.bleedGuard
+              ? "Recording through the speaker without headphones. iOS cancels the playback, but voice processing costs some input quality."
+              : "Full-quality input. Use headphones, or the tracks already playing will bleed into the take."}
+          </small>
           <label className="ld-slider">
             Sync nudge: {project.offsetMs} ms
             <input type="range" min={-200} max={200} step={5} value={project.offsetMs}
