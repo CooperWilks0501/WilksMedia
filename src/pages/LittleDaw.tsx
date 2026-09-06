@@ -602,12 +602,51 @@ export function LittleDawPage() {
   const nav = useNavigate();
   const [path, setPath] = useState<string[]>([]);
   const [open, setOpen] = useState<string | null>(null);
+  const [bootErr, setBootErr] = useState("");
 
   useEffect(() => {
     daw.requestPersist();
     document.title = "Little DAW";
     document.body.classList.add("ld-body");
     return () => { document.body.classList.remove("ld-body"); };
+  }, []);
+
+  // A white screen leaves nothing behind to diagnose, so stash the last error
+  // and surface it after the page comes back.
+  useEffect(() => {
+    try {
+      const prev = localStorage.getItem("ld-lasterror");
+      if (prev) {
+        setBootErr(prev);
+        localStorage.removeItem("ld-lasterror");
+      }
+    } catch { /* private mode */ }
+    const stash = (msg: string) => {
+      try { localStorage.setItem("ld-lasterror", msg.slice(0, 500)); } catch { /* ignore */ }
+    };
+    const onErr = (e: ErrorEvent) => stash(`${e.message} (${e.filename}:${e.lineno})`);
+    const onRej = (e: PromiseRejectionEvent) => stash(`Unhandled rejection: ${e.reason}`);
+    window.addEventListener("error", onErr);
+    window.addEventListener("unhandledrejection", onRej);
+    return () => {
+      window.removeEventListener("error", onErr);
+      window.removeEventListener("unhandledrejection", onRej);
+    };
+  }, []);
+
+  // Cancel the edge gesture before it starts. iOS only honours preventDefault
+  // on the initial touchstart; once the swipe is under way it is a real
+  // navigation and no amount of history juggling reliably stops it. Buttons
+  // are exempt so edge-adjacent controls stay tappable.
+  useEffect(() => {
+    const EDGE = 24;
+    const onStart = (e: TouchEvent) => {
+      const t = e.touches[0];
+      if (!t || (e.target as HTMLElement)?.closest?.("button")) return;
+      if (t.clientX < EDGE || t.clientX > window.innerWidth - EDGE) e.preventDefault();
+    };
+    document.addEventListener("touchstart", onStart, { passive: false });
+    return () => document.removeEventListener("touchstart", onStart);
   }, []);
 
   // Swipe-from-edge fires history.back(). Opened directly or from the home
@@ -624,6 +663,11 @@ export function LittleDawPage() {
   return (
     <Boundary>
     <div className="ld">
+      {bootErr && (
+        <p className="ld-err" onClick={() => setBootErr("")}>
+          Last crash: {bootErr} (tap to dismiss)
+        </p>
+      )}
       {open ? (
         <Song path={path} name={open} onExit={() => setOpen(null)} />
       ) : (
